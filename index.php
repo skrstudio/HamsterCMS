@@ -1,23 +1,19 @@
 <?php
 $default_template = 'plain';
 $default_directory = 'files';
-$page = isset($_GET['p']) ? "./{$default_directory}/".str_replace(['/', '\\', '.txt'], '', trim($_GET['p'], '/')).'.txt' : null;
+$page = isset($_GET['p']) ? "./{$default_directory}/" . str_replace(['/', '\\', '.txt'], '', trim($_GET['p'], '/')) . '.txt' : null;
 
 // If no specific page is requested or if the requested page is not found, get the first page in alphabetical order
 if ($page === null || !file_exists($page)) {
     $nav = glob("{$default_directory}/*.txt"); /* Change the path to the folder with the files */
-    usort($nav, function ($a, $b) { /* Sort by filename alphabetically */
-        return strcmp(basename($a), basename($b));
-    });
-
-    // Set the first page in alphabetical order as the default page
+    sort($nav);
     $page = reset($nav);
 }
 
-$template_file = "./templates/". (file_exists("{$page}_") ? trim(file_get_contents("{$page}_")) : "{$default_template}") ."/index.html";
+$template_file = "./templates/" . (file_exists("{$page}_") ? trim(file_get_contents("{$page}_")) : $default_template) . "/index.html";
 if (!file_exists($template_file)) {
-    echo "Template not found ({$template_file})";
     header("Status: 404 Not Found");
+    echo "Template not found ({$template_file})";
     exit;
 }
 
@@ -26,9 +22,8 @@ $output = file_get_contents($template_file);
 $output = str_replace('[[CONTENTS]]', file_get_contents($page), $output);
 /* enter dynamic navigation into template. Navigation can be referenced in page or template */
 $navigation = '';
-if (str_contains($output, '[[NAVIGATION]]')) {
+if (strpos($output, '[[NAVIGATION]]') !== false) {
     $nav = glob("{$default_directory}/*.txt"); /* Change the path to the folder with the files */
-    sort($nav); 
     foreach ($nav as $file) {
         $link = preg_replace('/^files\/(.*)\.txt$/i', '$1', $file);
         $navigation .= "<a href=\"/" . ($link == "index" ? "" : urlencode($link)) . "\">{$link}</a><br>\n"; /* Use links like /news */
